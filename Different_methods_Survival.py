@@ -2,6 +2,8 @@ import pandas as pd
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
+from sklearn.tree import DecisionTreeRegressor
+from lifelines.utils import concordance_index  
 
 from sksurv.datasets import load_veterans_lung_cancer
 from sksurv.nonparametric import kaplan_meier_estimator
@@ -25,6 +27,8 @@ print("label=", data_y[0])
 
 ## 2- plot the survival/censoring times
 print("-------------------Statistic Details----------------------------------")
+print("min survival/censoring time: ", np.min(data_y["Survival_in_days"]))
+print("max survival/censoring time: ", np.max(data_y["Survival_in_days"]))
 n_censored = data_y.shape[0] - data_y["Status"].sum()
 print(f"{n_censored / data_y.shape[0] * 100:.1f}% of records are censored")
 plt.figure(figsize=(9, 6))
@@ -61,8 +65,8 @@ x_new = pd.DataFrame.from_dict(
     columns=data_x_numeric.columns,
     orient="index",
 )
-print("Test Data:")
-print(x_new)
+###print("Test Data:")
+###print(x_new)
 # Predict Cox
 pred_surv = estimator.predict_survival_function(x_new)
 print("COX Results:")
@@ -81,8 +85,8 @@ plt.legend(loc="best")
 print("---------------------------------SVM--------------------------------------")
 estimator = FastSurvivalSVM(max_iter=1000, tol=1e-5, random_state=0)
 x = encode_categorical(data_x)
-print("Data features in SVM:")
-print(x.loc[0])
+###print("Data features in SVM:")
+###print(x.loc[0])
 estimator.fit(x, data_y)
 pred = estimator.predict(x.iloc[:2])
 print("SVM Results:")
@@ -96,17 +100,17 @@ print(estimator.predict(x_new))
 ## 5-GB
 print("---------------------------------GB---------------------------------------")
 #separate train and test:
-#second_column = np.array([item[1] for item in data_y])  # List comprehension to gather the second items  
-print("labels is GB", data_y[0])  
+#second_column = np.array([item[1] for item in data_y])  # List comprehension to gather the second items
+###print("labels is GB", data_y[0])
 
 
 X_train, X_test, y_train, y_test = train_test_split(x, data_y, test_size=0.25, random_state=0)
-print("data features in GB")
-print(X_train.loc[0])
+###print("data features in GB")
+###print(X_train.loc[0])
 
 
 #train
-est_cph_tree = GradientBoostingSurvivalAnalysis(n_estimators=100, learning_rate=1.0, max_depth=1, random_state=0)
+est_cph_tree = GradientBoostingSurvivalAnalysis(n_estimators=100, learning_rate=1.0, max_depth=3, random_state=0)
 est_cph_tree.fit(X_train, y_train)
 result_test = est_cph_tree.predict(X_test)
 print("Result GB:")
@@ -117,14 +121,17 @@ print("Cindex GB:",est_cph_tree.score(X_test, y_test))
 #-------------------------------------------------------------------------------
 ## 6-RF
 print("--------------------------------RF---------------------------------------")
-rsf = RandomSurvivalForest(n_estimators=1000, min_samples_split=10, min_samples_leaf=15, n_jobs=-1, random_state=23)
+rsf = RandomSurvivalForest(n_estimators=200, min_samples_split=5, min_samples_leaf=15, n_jobs=-1, random_state=23)
 rsf.fit(X_train, y_train)
 print("Cindex RF:",rsf.score(X_test, y_test))
+###print(X_test)
+print("predicted values:",rsf.predict(X_test))
+print("real labels:",y_test)
 #selecting test Data
 X_test_sorted = X_test.sort_values(by=["Age_in_years"])
 X_test_sel = pd.concat((X_test_sorted.head(3), X_test_sorted.tail(3)))
-print("selected Test:")
-print(X_test_sel)
+###print("selected Test:")
+###print(X_test_sel)
 
 surv = rsf.predict_survival_function(X_test_sel, return_array=True)
 plt.figure()
@@ -134,3 +141,28 @@ plt.ylabel("Survival probability")
 plt.xlabel("Time in days")
 plt.legend()
 plt.grid(True)
+
+#-------------------------------------------------------------------------------
+#-------------------------------------------------------------------------------
+## 7-Dtree
+print('-----------------------------Dtree---------------------------------------')
+dtree = DecisionTreeRegressor(max_depth =4)
+X_train, X_test, y_train, y_test = train_test_split(x, data_y, test_size=0.25, random_state=0)
+
+#separate survival month
+sur_train = np.array([item[1] for item in y_train])  # survival time
+event_train = np.array([item[0] for item in y_train])  # event observed
+sur_test = np.array([item[1] for item in y_test])  # survival time
+event_test = np.array([item[0] for item in y_test])  # event observed
+
+dtree.fit(X_train, sur_train)
+print("Dtree results:")
+pred_y_test = dtree.predict(X_test)
+print("real values:")
+print(sur_test)
+print(pred_y_test)
+c_index = concordance_index(sur_test, pred_y_test,event_test)  
+print("Concordance Index:", c_index)  
+
+
+
