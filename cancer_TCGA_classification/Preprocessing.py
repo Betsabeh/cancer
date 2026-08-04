@@ -36,10 +36,11 @@ def split_dataset(
     )
 
     return (
-        train_df.reset_index(drop=True),
-        val_df.reset_index(drop=True),
-        test_df.reset_index(drop=True),
+         train_df.copy(),
+         val_df.copy(),
+         test_df.copy(),
     )
+
 
 # =============================================================================
 def preprocess(dataset):
@@ -141,6 +142,26 @@ def save_processed_data(
 
 # =============================================================================
 #MAIN 
-dataset = pd.read_csv("TCGA_Cancer_Dataset.csv")
+dataset = pd.read_csv("TCGA_Cancer_Dataset.csv",index_col=0)
+print(np.shape(dataset))
 train_df, val_df, test_df = preprocess(dataset)
+
+
+
+print("\nTrain cancer distribution:")
+print(np.shape(train_df))
+print(train_df['Cancer_Type'].value_counts())
+
+print("\nValidation cancer distribution:")
+print(np.shape(val_df))
+print(val_df['Cancer_Type'].value_counts())
+
+print("\nTest cancer distribution:")
+print(np.shape(test_df))
+print(test_df['Cancer_Type'].value_counts())
 save_processed_data(train_df, val_df, test_df)
+
+Train_data =pd.read_csv('F:\\ML\\preprocessed_data\\train.csv',index_col=0)
+print("check the train size=",np.shape(Train_data))
+Test_data =pd.read_csv('F:\\ML\\preprocessed_data\\test.csv')
+print("check the test size:", np.shape(Test_data))
