@@ -6,7 +6,7 @@ import numpy as np
 # Step 1. Load Gene Expression Data
 # =============================================================================
 
-Gene_expression_Dataset_name = r"F:\research\research\Multimodal_Disease_Prediction\data\EB++AdjustPANCAN_IlluminaHiSeq_RNASeqV2.geneExp.xena.gz"
+Gene_expression_Dataset_name = r"F:\ML\data\EB++AdjustPANCAN_IlluminaHiSeq_RNASeqV2.geneExp.xena.gz"
 
 with gzip.open(Gene_expression_Dataset_name, 'rt') as f:
     gene_expr = pd.read_csv(f, sep="\t", index_col=0)
@@ -23,7 +23,7 @@ print()
 # Step 2. Load Clinical Data
 # =============================================================================
 
-Clinical_Dataset_name = r"F:\research\research\Multimodal_Disease_Prediction\data\TCGA_phenotype_denseDataOnlyDownload.tsv.gz"
+Clinical_Dataset_name = r"F:\ML\data\TCGA_phenotype_denseDataOnlyDownload.tsv.gz"
 
 with gzip.open(Clinical_Dataset_name, 'rt') as f:
     clinical = pd.read_csv(f, sep="\t", index_col=0)
@@ -37,6 +37,11 @@ print()
 print("="*60)
 print("An example of gene expression:\n", gene_expr.head())
 print("An example of related clinical data:\n", clinical.head())
+#duplicate columns in gene_expr
+print("number of duplicated gene expression=", gene_expr.columns.duplicated().sum())
+print("number of duplicated clinical=",clinical.index.duplicated().sum())
+#print gene name
+print(gene_expr.index[:10])
 # =============================================================================
 # Step 3. Match Samples
 # =============================================================================
@@ -57,7 +62,9 @@ print()
 gene_expr = gene_expr[common_samples]
 clinical = clinical.loc[common_samples]
 
-
+#check data type
+print("gene expression data type=",gene_expr.dtypes.unique())
+gene_expr = gene_expr.astype(np.float32)
 # =============================================================================
 # Step 4. Transpose Gene Matrix
 # =============================================================================
@@ -126,6 +133,9 @@ print("Cancer Type Distribution")
 print("="*60)
 
 print(dataset["Cancer_Type"].value_counts())
+print(dataset["Cancer_Type"].nunique())
+print(dataset["Cancer_Type"].value_counts().describe())
+
 
 # =============================================================================
 # Step 9. Missing Values
