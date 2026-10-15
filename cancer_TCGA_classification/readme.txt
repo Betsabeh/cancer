@@ -1,1 +1,1 @@
-This folder contains the Cancer classification type based on Genomic Features
+This folder contains the multi-Class Cancer classification based on gene-expression data
